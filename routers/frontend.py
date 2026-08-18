@@ -2,10 +2,11 @@ from typing import Annotated
 
 from fastapi import APIRouter, Depends, HTTPException, Request, status
 from fastapi.templating import Jinja2Templates
-from sqlalchemy import select
+from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
+from core.settings import settings
 from databases import models
 from databases.database import get_db
 
@@ -18,16 +19,30 @@ templates = Jinja2Templates(directory="templates")
 @router.get("/" , include_in_schema=False, name="home") # Home decorater
 @router.get("/posts", include_in_schema=False, name="posts") # Post Route
 async def home(request: Request, db: Annotated[AsyncSession, Depends(get_db)]):
-   result = await db.execute(select(models.Post)
+
+    count_result = await db.execute(select(func.count()).select_from(models.Post))
+    total = count_result.scalar()
+   
+    result = await db.execute(select(models.Post)
                     .options(selectinload(models.Post.author))
                     .order_by(models.Post.date_posted.desc())
+                    .limit(settings.POST_PER_PAGE),
         )
-   posts = result.scalars().all()
-   return templates.TemplateResponse(
-        request,
-        "home.html",
-        {"posts": posts, "title": "Home"}
-    )
+    posts = result.scalars().all()
+
+    has_more = len(posts) < total
+
+
+    return templates.TemplateResponse(
+            request,
+            "home.html",
+            {
+                "posts": posts,
+                "title": "Home",
+                "limit": settings.POST_PER_PAGE,
+                "has_more": has_more,
+            }
+        )
 
 # Return Single Post Page Route
 @router.get("/posts/{post_id}", include_in_schema=False) # Post Route
@@ -61,17 +76,33 @@ async def user_posts_page(user_id: int, request: Request, db: Annotated[AsyncSes
             detail="User not found"
         )
 
+    count_result = await db.execute(
+        select(func.count())
+        .select_from(models.Post)
+        .where(models.Post.user_id == user_id),
+    )
+    total = count_result.scalar() or 0
+
     result = await db.execute(
         select(models.Post)
         .options(selectinload(models.Post.author))
         .where(models.Post.user_id == user_id)
         .order_by(models.Post.date_posted.desc())
+        .limit(settings.POST_PER_PAGE),
     )
+
     posts = result.scalars().all()
+    has_more = len(posts) < total
     return templates.TemplateResponse(
         request,
         "user_posts.html",
-        {"posts": posts, "user":user, "title": f"{user.username}'s Posts"},
+        {
+            "posts": posts,
+            "user": user,
+            "title": f"{user.username}'s Posts",
+            "limit": settings.POST_PER_PAGE,
+            "has_more": has_more,
+        },
     )
 
 

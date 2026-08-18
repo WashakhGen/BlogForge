@@ -1,7 +1,7 @@
 from datetime import timedelta
 from typing import Annotated
 
-from fastapi import APIRouter, Depends, HTTPException, UploadFile, status
+from fastapi import APIRouter, Depends, HTTPException, Query, UploadFile, status
 from fastapi.security import OAuth2PasswordRequestForm
 from PIL import UnidentifiedImageError
 from sqlalchemy import func, or_, select
@@ -18,7 +18,7 @@ from authetication.auth import (
 from core.settings import settings
 from databases import models
 from databases.database import get_db
-from schemas.posts_schema import postResponse
+from schemas.posts_schema import PaginatedPostResponse, postResponse
 from schemas.users_schema import (
     Token,
     UserCreate,
@@ -114,18 +114,41 @@ async def get_user(user_id: int, db: Annotated[AsyncSession, Depends(get_db)]):
     raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="User not found")
 
 
-@router.get("/{user_id}/posts", response_model=list[postResponse])
-async def get_user_posts(user_id: int, db: Annotated[AsyncSession, Depends(get_db)]):
+@router.get("/{user_id}/posts", response_model=PaginatedPostResponse)
+async def get_user_posts(
+    user_id: int,
+    db: Annotated[AsyncSession, Depends(get_db)],
+    skip: Annotated[int, Query(ge=0)] = 0,
+    limit: Annotated[int, Query(ge=1, le=100)] = settings.POST_PER_PAGE,
+    ):
     await get_user(user_id, db)
+
+    count_result = await db.execute(
+        select(func.count())
+        .select_from(models.Post)
+        .where(models.Post.user_id == user_id),
+    )
+    total = count_result.scalar() or 0
 
     result = await db.execute(
         select(models.Post)
         .options(selectinload(models.Post.author))
         .where(models.Post.user_id == user_id)
         .order_by(models.Post.date_posted.desc())
+        .offset(skip)
+        .limit(limit),
     )
+
     posts = result.scalars().all()
-    return posts
+    has_more = skip + len(posts) < total
+
+    return PaginatedPostResponse(
+        posts=[postResponse.model_validate(post) for post in posts],
+        total=total,
+        skip=skip,
+        limit=limit,
+        has_more=has_more,
+    )
 
 
 @router.patch("/{user_id}", response_model=UserPrivateResponse)
