@@ -73,3 +73,22 @@ async def user_posts_page(user_id: int, request: Request, db: Annotated[AsyncSes
         "user_posts.html",
         {"posts": posts, "user":user, "title": f"{user.username}'s Posts"},
     )
+
+
+## login and register routes
+@router.get("/login", include_in_schema=False)
+async def login_page(request: Request):
+    return templates.TemplateResponse(
+        request,
+        "login.html",
+        {"title": "Login"},
+    )
+
+
+@router.get("/register", include_in_schema=False)
+async def register_page(request: Request):
+    return templates.TemplateResponse(
+        request,
+        "register.html",
+        {"title": "Register"},
+    )   

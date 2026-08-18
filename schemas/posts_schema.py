@@ -3,7 +3,7 @@ from datetime import datetime
 
 from pydantic import BaseModel, ConfigDict, Field
 
-from schemas.users_schema import UserResponse
+from schemas.users_schema import UserPublicResponse
 
 
 # Creating and repeating posts
@@ -25,4 +25,4 @@ class postResponse(postBase):
     id: int
     user_id: int
     date_posted: datetime
-    author: UserResponse
+    author: UserPublicResponse
