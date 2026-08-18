@@ -12,8 +12,7 @@ class postBase(BaseModel):
     content: str = Field(min_length=6, description="The content of the post")
 
 class postCreate(postBase):
-    user_id: int = Field(description="The id of the user who created the post")  # Temporary
-
+    pass
 
 class postUpdate(BaseModel):
     title: str | None = Field(defualt=None, min_length=5,max_length=100, description="The title of the post")

@@ -84,11 +84,19 @@ async def login_page(request: Request):
         {"title": "Login"},
     )
 
-
 @router.get("/register", include_in_schema=False)
 async def register_page(request: Request):
     return templates.TemplateResponse(
         request,
         "register.html",
         {"title": "Register"},
+    )
+
+
+@router.get("/account", include_in_schema=False)
+async def account_page(request: Request):
+    return templates.TemplateResponse(
+        request,
+        "account.html",
+        {"title": "Account"},
     )   

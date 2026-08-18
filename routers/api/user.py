@@ -8,10 +8,9 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
 from authetication.auth import (
+    CurrentUser,
     create_access_token,
     hash_password,
-    oauth2_scheme,
-    verify_access_token,
     verify_password,
 )
 from core.settings import settings
@@ -94,40 +93,8 @@ async def login_for_access_token(
 
 
 @router.get("/me", response_model=UserPrivateResponse)
-async def get_current_user(token: Annotated[str, Depends(oauth2_scheme)],
-                           db: Annotated[AsyncSession, Depends(get_db)]
-                        ):
-
-    """Get the currently authenticated user."""
-    user_id = verify_access_token(token)
-    if not user_id:
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Invalid credentials or expired token",
-            headers={"WWW-Authenticate": "Bearer"},
-        )
-
-    # Validate user_id is a valid integer (defense agaiinst malformed jwt)
-    try:
-        user_id_int = int(user_id)
-    except (TypeError,ValueError):
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Invalid or expired token",
-            headers={"WWW-Authenticate": "Bearer"},
-        )
-
-    result = await db.execute(
-        select(models.User).where(models.User.id == user_id_int)
-    )
-    user = result.scalars().first()
-    if not user:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail="User not found",
-            headers={"WWW-Authenticate": "Bearer"},
-        )
-    return user
+async def get_current_user(current_user: CurrentUser):
+    return current_user
 
 
 
@@ -159,9 +126,15 @@ async def get_user_posts(user_id: int, db: Annotated[AsyncSession, Depends(get_d
 
 
 @router.patch("/{user_id}", response_model=UserPrivateResponse)
-async def update_user_partial(user_id: int, user_data: UserUpdate, db: Annotated[AsyncSession, Depends(get_db)]):
-    user = await get_user(user_id, db)
+async def update_user_partial(user_id: int, user_data: UserUpdate, current_user: CurrentUser, db: Annotated[AsyncSession, Depends(get_db)]):
 
+    if user_id != current_user.id:
+        raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail = "Not authorized to Update this User"
+            )
+
+    user = await get_user(user_id, db)
     conditions = []
     if user_data.username is not None and user_data.username.lower() != user.username.lower():
         conditions.append(func.lower(models.User.username) == user_data.username.lower())
@@ -191,7 +164,12 @@ async def update_user_partial(user_id: int, user_data: UserUpdate, db: Annotated
 
 
 @router.delete("/{user_id}", status_code=status.HTTP_204_NO_CONTENT)
-async def delete_user(user_id: int, db: Annotated[AsyncSession, Depends(get_db)]):
+async def delete_user(user_id: int,  current_user: CurrentUser, db: Annotated[AsyncSession, Depends(get_db)]):
+    if user_id != current_user.id:
+        raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail = "Not authorized to Delete this User"
+            )
     user = await get_user(user_id, db)
     await db.delete(user)
     await db.commit()
