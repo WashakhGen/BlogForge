@@ -47,7 +47,10 @@ async def create_post(post: postCreate, db: Annotated[AsyncSession, Depends(get_
 # Return All Posts
 @router.get("", response_model=list[postResponse]) 
 async def get_posts(db: Annotated[AsyncSession, Depends(get_db)]):
-    results = await db.execute(select(models.Post).options(selectinload(models.Post.author)))
+    results = await db.execute(select(models.Post)
+                    .options(selectinload(models.Post.author))
+                    .order_by(models.Post.date_posted.desc())
+                )
     posts = results.scalars().all()
     return posts
      
