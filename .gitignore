@@ -14,3 +14,7 @@ blog.db
 
 ### dotenv ###
 .env
+
+### Profile Images
+media
+*.png

@@ -8,6 +8,8 @@ class Settings(BaseSettings):
     SECRET_KEY: SecretStr
     ALGORITHM: str = "HS256"    # Standart JSON ACCESS Token algorithm
     ACCESS_TOKEN_EXPIRE_MINUTES: int = 30
+    PROFILE_PICS_DIR: str = "media/profile_pics"
+    MAX_UPLOAD_SIZE_BYTES: int = 5 * 1024 * 1024
 
 settings = Settings()   # Loaded from .env file, or environment variables if not found
 
