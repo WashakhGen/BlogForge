@@ -2,7 +2,7 @@ from typing import Annotated
 
 from fastapi import APIRouter, Depends, HTTPException, Request, status
 from fastapi.templating import Jinja2Templates
-from sqlalchemy import func, select
+from sqlalchemy import func, select, text
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
@@ -150,3 +150,17 @@ async def reset_password_page(request: Request):
 
     response.headers["Referrer-Policy"] = "no-referrer"
     return response
+
+
+
+@router.get("/health")
+async def health_check(db: Annotated[AsyncSession, Depends(get_db)]):
+    try:
+        await db.execute(text("SELECT 1"))
+    except Exception as exc:
+        raise HTTPException(
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+            detail="Database Unavailable"
+        ) from exc
+
+    return {"status": "healthy"}
