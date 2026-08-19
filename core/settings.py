@@ -12,5 +12,24 @@ class Settings(BaseSettings):
     MAX_UPLOAD_SIZE_BYTES: int = 5 * 1024 * 1024
     POST_PER_PAGE: int = 10
 
+
+    ## Email Setting
+    RESET_TOKEN_EXPIRE_MIN: int = 60
+    MAIL_SERVER: str = "localhost"
+    MAIL_PORT: int = 587
+    MAIL_USERNAME: str = ""
+    MAIL_PASSWORD: SecretStr = SecretStr("")
+    MAIL_FROM: str = "noreply@example.com"
+    MAIL_USE_TLS: bool = True
+
+
+    FRONTEND_URL: str = "http://localhost:8000"
+
+    
+
+
+
+
+
 settings = Settings()   # Loaded from .env file, or environment variables if not found
 
