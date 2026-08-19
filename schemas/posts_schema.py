@@ -15,7 +15,7 @@ class postCreate(postBase):
     pass
 
 class postUpdate(BaseModel):
-    title: str | None = Field(defualt=None, min_length=5,max_length=100, description="The title of the post")
+    title: str | None = Field(default=None, min_length=5,max_length=100, description="The title of the post")
     content: str | None = Field(default=None, min_length=6, description="The content of the post")
 
 

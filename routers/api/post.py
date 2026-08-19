@@ -5,7 +5,7 @@ from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
-from authetication.auth import CurrentUser
+from authentication.auth import CurrentUser
 from databases import models
 from databases.database import get_db
 from schemas.posts_schema import (
@@ -94,12 +94,11 @@ async def update_post_full(post_id: int, post_data: postCreate, current_user: Cu
     if post.user_id != current_user.id:
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
-            details = "Not authorized to update this post"
+            detail = "Not authorized to update this post"
         )
 
     post.title = post_data.title
     post.content = post_data.content
-    post.user_id = post_data.user_id
     await db.commit()
     await db.refresh(post, attribute_names=["author"])
     return post
@@ -130,7 +129,7 @@ async def delete_post(post_id: int, current_user: CurrentUser, db: Annotated[Asy
     if post.user_id != current_user.id:
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
-            details = "Not authorized to delete this post"
+            detail = "Not authorized to delete this post"
         )
 
 

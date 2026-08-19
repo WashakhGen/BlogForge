@@ -18,7 +18,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 from starlette.concurrency import run_in_threadpool
 
-from authetication.auth import (
+from authentication.auth import (
     CurrentUser,
     create_access_token,
     generate_reset_token,
@@ -377,7 +377,7 @@ async def upload_profile_picture(
     if current_user.id != user_id:
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
-            detail="Not Authorize to update this Users Picture",
+            detail="Not Authorized to update this Users Picture",
         )
 
     content = await file.read()
@@ -399,7 +399,7 @@ async def upload_profile_picture(
     await db.commit()
     await db.refresh(current_user)
 
-    if old_filename or old_filename:
+    if old_filename:
         delete_profile_image(old_filename)
 
     return current_user
@@ -414,7 +414,7 @@ async def delete_profile_picture(
     if current_user.id != user_id:
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
-            detail="Not Authorize to update this Users Picture",
+            detail="Not Authorized to update this Users Picture",
         )
 
     old_filename = current_user.image_file
