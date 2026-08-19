@@ -13,6 +13,19 @@ from databases.database import get_db
 router = APIRouter()
 templates = Jinja2Templates(directory="templates")
 
+SIDEBAR_POST_COUNT = 5
+
+
+async def get_sidebar_posts(db: AsyncSession) -> list[models.Post]:
+    """Most recent posts, used to populate the "Latest Posts" sidebar widget on every page."""
+    result = await db.execute(
+        select(models.Post)
+        .options(selectinload(models.Post.author))
+        .order_by(models.Post.date_posted.desc())
+        .limit(SIDEBAR_POST_COUNT),
+    )
+    return list(result.scalars().all())
+
 
 @router.get("/", include_in_schema=False, name="home")  # Home decorater
 @router.get("/posts", include_in_schema=False, name="posts")  # Post Route
@@ -39,6 +52,7 @@ async def home(request: Request, db: Annotated[AsyncSession, Depends(get_db)]):
             "title": "Home",
             "limit": settings.POST_PER_PAGE,
             "has_more": has_more,
+            "sidebar_posts": await get_sidebar_posts(db),
         },
     )
 
@@ -56,7 +70,13 @@ async def post_page(
     post = result.scalars().first()
     if post:
         return templates.TemplateResponse(
-            request, "post.html", {"post": post, "title": post.title}
+            request,
+            "post.html",
+            {
+                "post": post,
+                "title": post.title,
+                "sidebar_posts": await get_sidebar_posts(db),
+            },
         )
     raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Post not found")
 
@@ -99,53 +119,62 @@ async def user_posts_page(
             "title": f"{user.username}'s Posts",
             "limit": settings.POST_PER_PAGE,
             "has_more": has_more,
+            "sidebar_posts": await get_sidebar_posts(db),
         },
     )
 
 
 ## login and register routes
 @router.get("/login", include_in_schema=False)
-async def login_page(request: Request):
+async def login_page(request: Request, db: Annotated[AsyncSession, Depends(get_db)]):
     return templates.TemplateResponse(
         request,
         "login.html",
-        {"title": "Login"},
+        {"title": "Login", "sidebar_posts": await get_sidebar_posts(db)},
     )
 
 
 @router.get("/register", include_in_schema=False)
-async def register_page(request: Request):
+async def register_page(
+    request: Request, db: Annotated[AsyncSession, Depends(get_db)]
+):
     return templates.TemplateResponse(
         request,
         "register.html",
-        {"title": "Register"},
+        {"title": "Register", "sidebar_posts": await get_sidebar_posts(db)},
     )
 
 
 @router.get("/account", include_in_schema=False)
-async def account_page(request: Request):
+async def account_page(
+    request: Request, db: Annotated[AsyncSession, Depends(get_db)]
+):
     return templates.TemplateResponse(
         request,
         "account.html",
-        {"title": "Account"},
+        {"title": "Account", "sidebar_posts": await get_sidebar_posts(db)},
     )
 
 
 @router.get("/forgot-password", include_in_schema=False)
-async def forgot_password_page(request: Request):
+async def forgot_password_page(
+    request: Request, db: Annotated[AsyncSession, Depends(get_db)]
+):
     return templates.TemplateResponse(
         request,
         "forgot_password.html",
-        {"title": "Forgot Password"},
+        {"title": "Forgot Password", "sidebar_posts": await get_sidebar_posts(db)},
     )
 
 
 @router.get("/reset-password", include_in_schema=False)
-async def reset_password_page(request: Request):
+async def reset_password_page(
+    request: Request, db: Annotated[AsyncSession, Depends(get_db)]
+):
     response = templates.TemplateResponse(
         request,
         "reset_password.html",
-        {"title": "Reset Password"},
+        {"title": "Reset Password", "sidebar_posts": await get_sidebar_posts(db)},
     )
 
     response.headers["Referrer-Policy"] = "no-referrer"

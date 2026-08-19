@@ -52,12 +52,12 @@ async def send_password_reset_email(
     If you didn't request this, you can safely ignore this email.
 
     Best regards,
-    The FastAPI Blog Team
+    The BlogForge Team
 """
 
     await send_email(
         to_email=to_email,
-        subject="Reset Your Password - FastAPI Blog",
+        subject="Reset Your Password - BlogForge",
         plain_text=plain_text,
         html_content=html_content,
     )

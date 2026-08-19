@@ -1,11 +1,11 @@
 {
-  "name": "FastAPI Blog",
-  "short_name": "FastAPI Blog",
-  "description": "FastAPI Tutorial",
+  "name": "BlogForge",
+  "short_name": "BlogForge",
+  "description": "BlogForge — a modern blogging platform",
   "start_url": "/",
   "display": "standalone",
   "background_color": "#ffffff",
-  "theme_color": "#527c9f",
+  "theme_color": "#0a84ff",
   "icons": [
     {
       "src": "/static/icons/icon.png",

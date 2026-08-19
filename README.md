@@ -1,8 +1,6 @@
-# FastAPI Blog
+# BlogForge
 
-🚧 Work in progress.
-
-Blog API + server-rendered frontend built with FastAPI, async SQLAlchemy, and Jinja2. Users can register, log in (JWT), reset forgotten passwords by email, upload a profile picture, and create/edit/delete posts.
+A blog API + server-rendered frontend built with FastAPI, async SQLAlchemy, and Jinja2. Users can register, log in (JWT), reset forgotten passwords by email, upload a profile picture, and create/edit/delete posts.
 
 ## Features
 
@@ -10,30 +8,35 @@ Blog API + server-rendered frontend built with FastAPI, async SQLAlchemy, and Ji
 - **Password reset**: forgot-password email flow with expiring tokens (background email send)
 - **Users**: fetch, partial update (unique username/email re-checked on change), delete, profile picture upload/delete
 - **Posts**: create, fetch (paginated), full/partial update, delete — ownership enforced (only the author can edit/delete)
-- **Frontend pages**: home feed (paginated, "Load More"), single post, a user's posts, login/register/account/forgot-password/reset-password
+- **Frontend pages**: home feed (paginated, "Load More"), single post, a user's posts, login/register/account/forgot-password/reset-password — glassmorphic UI with light/dark theme toggle
 - Centralized exception handlers: JSON for `/api/*`, rendered HTML page otherwise
+- Security headers middleware (X-Frame-Options, X-Content-Type-Options, Referrer-Policy, HSTS)
+- `/health` endpoint for uptime/DB checks
+- Database migrations via Alembic; PostgreSQL in production
+- Test suite (pytest) + GitHub Actions CI (lint + tests on every push/PR)
 
 ## Tech Stack
 
 - [FastAPI](https://fastapi.tiangolo.com/) + Jinja2 templates
-- SQLAlchemy 2.0 (async) + aiosqlite
+- SQLAlchemy 2.0 (async) + PostgreSQL (`psycopg`), migrations via Alembic
 - `pwdlib[argon2]` for password hashing, `pyjwt` for access tokens
 - `pydantic-settings` for config (`.env`)
 - Pillow for profile picture processing
 - `aiosmtplib` for sending password-reset emails
-- uv for dependency management, ruff for linting
+- uv for dependency management, ruff for linting, pytest for tests
 
 ## Project Structure
 
 ```
-main.py                    # app setup, router + exception handler registration
+main.py                    # app setup, router + exception handler registration, security headers
 core/
   settings.py               # env-driven config (Settings/settings)
-authetication/
+authentication/
   auth.py                    # password hashing, JWT create/verify, CurrentUser dependency
 databases/
   database.py                 # async engine, session, Base
   models.py                    # User, Post, PasswordResetToken
+alembic/                        # database migrations
 routers/
   api/
     user.py                    # /api/users — auth, profile, password reset
@@ -49,6 +52,8 @@ utils/
   email_utils.py                   # password-reset email sending
 templates/                         # Jinja2 templates (incl. templates/email/)
 static/                             # CSS, JS, icons
+tests/                                # pytest suite (async, Postgres-backed)
+.github/workflows/                    # CI: ruff + pytest
 ```
 
 ## API Overview
@@ -66,15 +71,36 @@ static/                             # CSS, JS, icons
 | PATCH/DELETE | `/api/users/{user_id}/picture` | Upload / delete profile picture |
 | GET/POST | `/api/posts` | List (paginated) / create post |
 | GET/PUT/PATCH/DELETE | `/api/posts/{post_id}` | Fetch / replace / update / delete post |
+| GET | `/health` | Liveness + DB connectivity check |
 
 Interactive docs at `/docs`.
 
 ## Setup
 
+Requires a running PostgreSQL instance.
+
 ```bash
 uv sync
-echo "SECRET_KEY=change-me" > .env   # required; mail settings optional for local dev
+cat <<EOF > .env
+DATABASE_URL=postgresql+psycopg://bloguser:blogpass@localhost/blog
+SECRET_KEY=change-me
+EOF
+uv run alembic upgrade head
 uv run fastapi dev main.py
 ```
 
 App runs at `http://127.0.0.1:8000`.
+
+## Tests
+
+Needs a local Postgres reachable at `bloguser`/`blogpass`/`test_blog` (matches `tests/conftest.py`):
+
+```bash
+uv run pytest
+```
+
+## Lint
+
+```bash
+uv run ruff check .
+```
