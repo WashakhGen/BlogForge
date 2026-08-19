@@ -1,7 +1,7 @@
 [project]
-name = "fastapi_blogs"
+name = "blogforge"
 version = "0.1.0"
-description = "Add your description here"
+description = "BlogForge — a modern blogging platform"
 readme = "README.md"
 requires-python = ">=3.12"
 dependencies = [
