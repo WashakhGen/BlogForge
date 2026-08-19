@@ -5,20 +5,16 @@ from fastapi.exception_handlers import RequestValidationError
 from fastapi.staticfiles import StaticFiles
 from starlette.exceptions import HTTPException as StarletteHTTPException
 
-from databases.database import Base, engine
+from databases.database import engine
 from routers import exception, frontend
 from routers.api import post, user
 
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    # Startup
-    async with engine.begin() as conn:
-        await conn.run_sync(Base.metadata.create_all)
     yield
     # Shutdown
     await engine.dispose()
-
 
 
 app = FastAPI(lifespan=lifespan)
@@ -30,7 +26,9 @@ app.include_router(post.router, prefix="/api/posts", tags=["Posts"])
 app.include_router(frontend.router, include_in_schema=False)
 
 # Exceptions
-app.add_exception_handler(StarletteHTTPException, exception.general_http_exception_handler)
-app.add_exception_handler(RequestValidationError, exception.validation_exception_handler)
-
-
+app.add_exception_handler(
+    StarletteHTTPException, exception.general_http_exception_handler
+)
+app.add_exception_handler(
+    RequestValidationError, exception.validation_exception_handler
+)
