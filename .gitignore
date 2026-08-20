@@ -18,3 +18,8 @@ blog.db
 ### Profile Images
 media
 *.png
+
+### Database Files ###
+*.sqlite3
+*.db
+
